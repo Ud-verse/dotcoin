@@ -230,6 +230,44 @@ def auto_gacha(apikey, authorization, coins):
         print(f"{Fore.RED+Style.BRIGHT}[ Gacha ] : Gagal dengan status code {response.status_code}")
 
 # Tambahkan pemanggilan fungsi ini di dalam loop utama atau sesuai kebutuhan
+def restore_attempts(apikey, authorization):
+    url = "https://api.dotcoin.bot/rest/v1/rpc/restore_attempt"
+    headers = {
+        "accept": "*/*",
+        "accept-language": "en-US,en;q=0.9",
+        "apikey": apikey,
+        "authorization": f"Bearer {authorization}",
+        "cache-control": "no-cache",
+        "content-profile": "public",
+        "content-type": "application/json",
+        "origin": "https://dot.dapplab.xyz",
+        "pragma": "no-cache",
+        "priority": "u=1, i",
+        "referer": "https://dot.dapplab.xyz/",
+        "sec-ch-ua": "\"Microsoft Edge\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\", \"Microsoft Edge WebView2\";v=\"125\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "cross-site",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        "x-client-info": "postgrest-js/1.9.2",
+    }
+    data = {}
+    false_count = 0
+    while false_count < 1:
+        response = requests.post(url, headers=headers, json=data)
+        response_data = response.json()
+        # print(false_count, response_data)
+        # print(response_data)
+        cek_respons = response_data.get('success', False)
+        if cek_respons == True:
+            # false_count += 1
+            print(f"{Fore.GREEN+Style.BRIGHT}[ Restore Attempt ] : Berhasil restore energi gratisan")
+        else:
+            false_count += 1
+            print(f"{Fore.RED+Style.BRIGHT}[ Restore Attempt ] : Gagal restore energi, udah limit!")
+        time.sleep(1)
 
 def main():
     print_welcome_message()
@@ -271,19 +309,28 @@ def main():
                 print(f"{Fore.BLUE+Style.BRIGHT}[ Multiple Click Level ] : {info['multiple_clicks']}")
                 auto_gacha(apikey, authorization, 150000)
                 energy = info['daily_attempts']
-                if energy > 0:
+                while energy > 0:
                     for _ in range(energy):
                         print(f"{Fore.BLUE+Style.BRIGHT}\r[ Tap ] : Tapping..", end="" , flush=True)
                         time.sleep(3)
                         save_coins(20000, apikey, authorization)
                         print(f"{Fore.GREEN+Style.BRIGHT}\r[ Tap ] : Sukses             ", flush=True)
+                    info = get_user_info(apikey, authorization)
+                    energy = info['daily_attempts']
+                    if energy == 0:
+                        restore_attempts(apikey, authorization)
+                        info = get_user_info(apikey, authorization)
+                        energy = info['daily_attempts']
                 else:
                     print(f"{Fore.RED+Style.BRIGHT}Energi Anda habis. Menunggu pengisian ulang energi...")
-                
-                
+                    if energy == 0:
+                        restore_attempts(apikey, authorization)
+                        info = get_user_info(apikey, authorization)
+                        energy = info['daily_attempts']
+
             else:
                 print("\r{Fore.RED+Style.BRIGHT}Token akses tidak valid, lanjut ke akun berikutnya.")
-
+        time.sleep(2)
         # Hitung mundur selama 30 detik setelah semua akun telah diproses
         print(f"{Fore.CYAN+Style.BRIGHT}==============Semua akun telah diproses=================")
         for i in range(300, 0, -1):
